@@ -39,6 +39,7 @@ import net.minecraft.util.math.Vec3d;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import space.essem.image2map.config.Image2MapConfig;
+import space.essem.image2map.renderer.DitherMode;
 import space.essem.image2map.renderer.MapRenderer;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
@@ -128,7 +129,11 @@ public class Image2Map implements ModInitializer {
 	static class DitherArdumentType implements ArgumentType<DitherMode> {
 
 		@Override public DitherMode parse (StringReader reader) throws CommandSyntaxException {
-			return DitherMode.fromString(reader.readString());
+			DitherMode mode = DitherMode.fromString(reader.readString());
+			if (mode == null){
+				throw new SimpleCommandExceptionType(Text.of("invalid dither mode string")).create();
+			}
+			return mode;
 		}
 
 		@Override public <S> CompletableFuture<Suggestions> listSuggestions (CommandContext<S> context, SuggestionsBuilder builder) {
@@ -138,17 +143,17 @@ public class Image2Map implements ModInitializer {
 
 	}
 
-	public enum DitherMode {
-		NONE,
-		FLOYD;
-
-		public static DitherMode fromString (String string) throws CommandSyntaxException {
-			if (string.equalsIgnoreCase("NONE")) {
-				return DitherMode.NONE;
-			} else if (string.equalsIgnoreCase("DITHER") || string.equalsIgnoreCase("FLOYD")) { return DitherMode.FLOYD; }
-			throw new SimpleCommandExceptionType(Text.of("invalid dither mode")).create();
-		}
-	}
+//	public enum DitherMode {
+//		NONE,
+//		FLOYD;
+//
+//		public static DitherMode fromString (String string) throws CommandSyntaxException {
+//			if (string.equalsIgnoreCase("NONE")) {
+//				return DitherMode.NONE;
+//			} else if (string.equalsIgnoreCase("DITHER") || string.equalsIgnoreCase("FLOYD")) { return DitherMode.FLOYD; }
+//			throw new SimpleCommandExceptionType(Text.of("invalid dither mode")).create();
+//		}
+//	}
 
 	private int createMap1_1 (CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		return createMap(context, 1, 1);
