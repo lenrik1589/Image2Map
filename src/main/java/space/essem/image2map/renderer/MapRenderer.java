@@ -12,6 +12,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.map.MapState;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import static space.essem.image2map.Image2Map.LOGGER;
 import static space.essem.image2map.renderer.DitherMode.mapColors;
@@ -48,7 +49,7 @@ public class MapRenderer {
 				player.sendMessage(Text.of(String.format("Splitting map x: %d, y: %d, of %d×%d (%d/%d)", i, j, h, w,
 				                                         j * w + i, w * h)), false);
 				ItemStack stack = FilledMapItem.createMap(world, (int) x + i, (int) z + i, (byte) 0, false, false);
-				stack.setCustomName(Text.of("map [" + (i + 1) + "×" + (j + 1) + "]"));
+				stack.setCustomName(Text.of("map [" + (i + 1) + "×" + (j + 1) + "] " + mode.name()).copy().formatted(Formatting.GREEN));
 				MapState state = FilledMapItem.getMapState(stack, world);
 				state.locked = true;
 				for (int row = 0; row < 128; row ++){

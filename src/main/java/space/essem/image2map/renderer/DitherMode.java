@@ -12,11 +12,15 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.helper.ColorHelper;
 import net.minecraft.block.MaterialColor;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import space.essem.image2map.dithering.ErrorPropogatingDither;
 
 public enum DitherMode {
 	None(DitherMode::NoDither),
-	Floyd(DitherMode::FloydSteinbergDither),
 	Java(DitherMode::JavaDither),
+	Floyd(ErrorPropogatingDither.FloydDither::dither),
+	Stucki(ErrorPropogatingDither.StuckiDither::dither),
+	Burkes(ErrorPropogatingDither.BurkesDither::dither),
+	SierraLite(ErrorPropogatingDither.SierraLiteDither::dither),
 	;
 
 	public static List<MaterialColor> mapColors;
@@ -70,46 +74,7 @@ public enum DitherMode {
 		return NoDither(materials, dithered);
 	}
 
-	static BufferedImage FloydSteinbergDither (List<MaterialColor> materials, BufferedImage image) {
-		try {
-			for (int y = 0; y < image.getHeight(); y++) {
-				for (int x = 0; x < image.getWidth(); x++) {
-					int oldRgb = image.getRGB(x, y);
-					int val = nearestColor(materials, new Color(oldRgb));
-					int newRgb = ColorHelper.swapRedBlueIfNeeded(
-							materials.get(val >> 2).getRenderColor(val & 3)
-					);
-					image.setRGB(x, y, newRgb);
-					int errRgb = ((128 + (oldRgb >> 16 & 0xff) - (newRgb >> 16 & 0xff)) << 16) |
-					             ((128 + (oldRgb >> 8 & 0xff) - (newRgb >> 8 & 0xff)) << 8) |
-					             (128 + (oldRgb & 0xff) - (newRgb & 0xff)) |
-					             0xff000000;
-					if (x + 1 < image.getWidth()) {
-						int pixelColor = image.getRGB(x + 1, y);
-						image.setRGB(x + 1, y, applyError(pixelColor, errRgb, 7.0 / 16.0));
-					}
-					if (y + 1 < image.getHeight()) {
-						if (x > 0) {
-							int pixelColor = image.getRGB(x - 1, y + 1);
-							image.setRGB(x - 1, y + 1, applyError(pixelColor, errRgb, 3.0 / 16.0));
-						}
-						int pixelColor = image.getRGB(x, y + 1);
-						image.setRGB(x, y + 1, applyError(pixelColor, errRgb, 5.0 / 16.0));
-						if (x + 1 < image.getWidth()) {
-							pixelColor = image.getRGB(x + 1, y + 1);
-							image.setRGB(x + 1, y + 1, applyError(pixelColor, errRgb, 1.0 / 16.0));
-						}
-					}
-
-				}
-			}
-		} catch (Exception e){
-			System.out.println("HAAALT!!");
-		}
-		return image;
-	}
-
-	private static int applyError (int orig, int err, double quant) {
+	public static int applyError (int orig, int err, double quant) {
 		int pR = MathHelper.clamp((orig >> 16 & 0xff) + (int) ((double)((err >> 16 & 0xff) - 128) * quant), 0, 255);
 		int pG = MathHelper.clamp((orig >> 8 & 0xff) + (int) ((double)((err >> 8 & 0xff) - 128) * quant), 0, 255);
 		int pB = MathHelper.clamp((orig & 0xff) + (int) ((double)((err & 0xff) - 128) * quant), 0, 255);
