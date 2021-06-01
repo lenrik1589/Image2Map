@@ -77,12 +77,13 @@ public enum DitherMode {
 					int oldRgb = image.getRGB(x, y);
 					int val = nearestColor(materials, new Color(oldRgb));
 					int newRgb = ColorHelper.swapRedBlueIfNeeded(
-							materials.get( val >> 2).getRenderColor(val & 3)
+							materials.get(val >> 2).getRenderColor(val & 3)
 					);
 					image.setRGB(x, y, newRgb);
-					int errRgb = (((oldRgb >> 16 & 0xff) - (newRgb >> 16 & 0xff)) << 16) |
-					             (((oldRgb >> 8 & 0xff) - (newRgb >> 8 & 0xff)) << 8) |
-					             ((oldRgb & 0xff) - (newRgb & 0xff));
+					int errRgb = ((128 + (oldRgb >> 16 & 0xff) - (newRgb >> 16 & 0xff)) << 16) |
+					             ((128 + (oldRgb >> 8 & 0xff) - (newRgb >> 8 & 0xff)) << 8) |
+					             (128 + (oldRgb & 0xff) - (newRgb & 0xff)) |
+					             0xff000000;
 					if (x + 1 < image.getWidth()) {
 						int pixelColor = image.getRGB(x + 1, y);
 						image.setRGB(x + 1, y, applyError(pixelColor, errRgb, 7.0 / 16.0));
@@ -109,10 +110,10 @@ public enum DitherMode {
 	}
 
 	private static int applyError (int orig, int err, double quant) {
-		int pR = MathHelper.clamp((orig >> 16 & 0xff) + (int) ((double)(err >> 16 & 0xff) * quant), 0, 255);
-		int pG = MathHelper.clamp((orig >> 8 & 0xff) + (int) ((double)(err >> 8 & 0xff) * quant), 0, 255);
-		int pB = MathHelper.clamp((orig & 0xff) + (int) ((double)(err & 0xff) * quant), 0, 255);
-		return pR << 16 | pG << 8 | pB;
+		int pR = MathHelper.clamp((orig >> 16 & 0xff) + (int) ((double)((err >> 16 & 0xff) - 128) * quant), 0, 255);
+		int pG = MathHelper.clamp((orig >> 8 & 0xff) + (int) ((double)((err >> 8 & 0xff) - 128) * quant), 0, 255);
+		int pB = MathHelper.clamp((orig & 0xff) + (int) ((double)((err & 0xff) - 128) * quant), 0, 255);
+		return 0xff000000 | pR << 16 | pG << 8 | pB;
 	}
 
 	static BufferedImage NoDither (List<MaterialColor> materials, BufferedImage image) {
